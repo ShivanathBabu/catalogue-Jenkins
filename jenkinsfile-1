@@ -7,24 +7,25 @@ pipeline {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
+    environment {
+        appVersion = ''
+    }
 
     stages {
-        stage('Build') {
-            steps {
-                script {
-                    sh """
-                        echo "Hello Build"
-                        sleep 10
-                        env
-                    """
-                }
-            }
+        stage('Read package.json') {
+    steps {
+        script {
+            // Read the file from the workspace
+            def packageJson = readJSON file: 'package.json'
+            
+            // Access properties like 'version' or 'name'
+            appVersion = packageJson.version
+            def name = packageJson.name
+            
+            echo "Building ${name} version ${version}"
         }
-        stage('Test') {
-            steps {
-                echo 'Testing..'
-            }
-        }
+    }
+}
         
     }
 
