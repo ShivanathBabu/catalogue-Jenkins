@@ -29,7 +29,7 @@ pipeline {
     }
 }
     stages {
-        stage('Read package.json') {
+        stage('Build') {
     steps {
         dir('catalogue-v3') {
         script {
