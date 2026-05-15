@@ -11,7 +11,7 @@ pipeline {
         appVersion = ''
         Region = 'us-east-1'
         ACC_ID = '139355608147'
-        PROJECT = 'Roboshop'
+        PROJECT = 'roboshop'
         COMPONENT = 'catalogue'
     }
 
