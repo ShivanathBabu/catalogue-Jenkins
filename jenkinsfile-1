@@ -23,7 +23,7 @@ pipeline {
             appVersion = packageJson.version
             def name = packageJson.name
             
-            echo "Building ${name} version ${version}"
+            echo "Building ${name} version ${appVersion}"
         }
       }
     }
