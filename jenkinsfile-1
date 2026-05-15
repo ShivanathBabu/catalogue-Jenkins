@@ -28,6 +28,18 @@ pipeline {
       }
     }
 }
+    stages {
+        stage('Read package.json') {
+    steps {
+        dir('catalogue-v3') {
+        script {
+            sh """
+                npm install
+            """
+        }
+      }
+    }
+}
         
     }
 
