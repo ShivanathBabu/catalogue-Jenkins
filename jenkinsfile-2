@@ -1,0 +1,23 @@
+pipeline {
+    agent {
+        label = "AGENT-1"
+    }
+
+    environment {
+        appVersion = ''
+    }
+
+    stages {
+        stage ('App Version') {
+            steps {
+                dir ('catalogue-v3') {
+                    script {
+                        def packageJson = readJSON file: 'package.json'
+                        def appVersion = packageJson.version
+                        echo "App Version: ${appVersion}"
+                    }
+                }
+            }
+        }
+    }
+}
