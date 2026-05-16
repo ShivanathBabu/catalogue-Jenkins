@@ -23,8 +23,9 @@ pipeline {
                 dir ('catalogue-v3') {
                     script {
                         def packageJson = readJSON file: 'package.json'
-                        def appVersion = packageJson.version
-                        echo "App Version: ${appVersion}"
+                        appVersion = packageJson.version
+                        def name = packageJson.name
+                        echo "Building ${name} version ${appVersion}"  
                     }
                 }
             }
