@@ -16,6 +16,9 @@ pipeline {
         PROJECT = 'roboshop'
         COMPONENT = 'catalogue'
     }
+    parameters {
+        booleanParam(name: 'deploy', defaultValue: false, description: 'Toggle this value')
+    }
 
     stages {
         stage ('App Version') {
@@ -46,7 +49,17 @@ pipeline {
             }
         }
 
-        stage ('Docker Image') {
+        stage ('Unit Testing') {
+            steps {
+                script {
+                    sh """
+                        echo "unit tests"
+                    """
+                }
+            }
+        }
+
+        stage ('Docker Build') {
             steps {
                 script {
                     withAWS(credentials: 'aws-creds', region: 'us-east-1') {
@@ -55,6 +68,24 @@ pipeline {
                         docker build -t ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion} .
                         docker push ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion}
                     """
+                }
+                }
+            }
+        }
+
+           stage ('Trigger Deploy') {
+            when {
+                expression {parms.deploy}
+            }
+            steps {
+                script {
+                    build job: 'catalogue-cd/catalogue',
+                    parameters: [
+                            string(name: 'appVersion', value: '${appVersion}'),
+                            string(name: 'deploy_to', value: 'dev')
+                    ],
+                    propagate: false,
+                    wait: false
                 }
                 }
             }
