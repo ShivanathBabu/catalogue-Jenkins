@@ -64,12 +64,14 @@ pipeline {
                 scannerHome = tool 'sonar-7.2'
             }
             steps {
+                 dir('catalogue-v3') {
                 script {
                     // sonar server environment
                     withSonarQubeEnv('sonar-7.2') { 
                         sh "${scannerHome}/bin/sonar-scanner"
                     }
                 }
+              }
             }
         }
 
