@@ -74,7 +74,7 @@ pipeline {
               }
             }
         }
-        // Enable webhook sonar qube server
+        // Enable webhook sonar qube server and wait for the result
          stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
