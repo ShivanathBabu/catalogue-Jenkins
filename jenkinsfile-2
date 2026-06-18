@@ -94,32 +94,38 @@ pipeline {
                     curl -s -L \
                       -H "Accept: application/vnd.github+json" \
                       -H "Authorization: Bearer $GITHUB_TOKEN" \
-                      https://api.github.com/repos/daws-84s/catalogue/dependabot/alerts
+                      https://api.github.com/repos/ShivanathBabu/catalogue-Jenkins/dependabot/alerts
                     ''',
                     returnStdout: true
                 ).trim()
 
-                echo "GitHub Response: ${response}"
+                def alerts = readJSON text: response
 
-                def json = readJSON text: response
+                def vulnerableAlerts = alerts.findAll { alert ->
+                    def severity = alert.security_advisory.severity?.toLowerCase()
+                    def state = alert.state?.toLowerCase()
 
-                // Handle API errors
-                if (json instanceof Map) {
-                    error "GitHub API Error: ${json.message}"
-                }
-
-                def vulnerableAlerts = json.findAll { alert ->
-                    alert?.state == 'open' &&
-                    ['critical', 'high'].contains(
-                        alert?.security_advisory?.severity?.toLowerCase()
-                    )
+                    state == 'open' &&
+                    ['critical', 'high'].contains(severity)
                 }
 
                 if (vulnerableAlerts.size() > 0) {
-                    error "Found ${vulnerableAlerts.size()} HIGH/CRITICAL alerts"
+
+                    echo "===== HIGH/CRITICAL DEPENDABOT ALERTS ====="
+
+                    vulnerableAlerts.each { alert ->
+                        echo """
+Package  : ${alert.dependency.package.name}
+Severity : ${alert.security_advisory.severity}
+CVE      : ${alert.security_advisory.cve_id}
+Summary  : ${alert.security_advisory.summary}
+"""
+                    }
+
+                    error("Security Gate Failed. Found ${vulnerableAlerts.size()} HIGH/CRITICAL vulnerabilities.")
                 }
 
-                echo "No HIGH/CRITICAL alerts found"
+                echo "No HIGH/CRITICAL vulnerabilities found."
             }
         }
     }
