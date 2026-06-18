@@ -85,40 +85,45 @@ pipeline {
         // }
 
         stage('Check Dependabot Alerts') {
-            environment { 
-                GITHUB_TOKEN = credentials('github-token')
-            }
-            steps {
-                script {
-                    // Fetch alerts from GitHub
-                    def response = sh(
-                        script: """
-                            curl -s -H "Accept: application/vnd.github+json" \
-                                 -H "Authorization: token ${GITHUB_TOKEN}" \
-                                 https://api.github.com/repos/daws-84s/catalogue/dependabot/alerts
-                        """,
-                        returnStdout: true
-                    ).trim()
+    steps {
+        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+            script {
 
-                    // Parse JSON
-                    def json = readJSON text: response
+                def response = sh(
+                    script: '''
+                    curl -s -L \
+                      -H "Accept: application/vnd.github+json" \
+                      -H "Authorization: Bearer $GITHUB_TOKEN" \
+                      https://api.github.com/repos/daws-84s/catalogue/dependabot/alerts
+                    ''',
+                    returnStdout: true
+                ).trim()
 
-                    // Filter alerts by severity
-                    def criticalOrHigh = json.findAll { alert ->
-                        def severity = alert?.security_advisory?.severity?.toLowerCase()
-                        def state = alert?.state?.toLowerCase()
-                        return (state == "open" && (severity == "critical" || severity == "high"))
-                    }
+                echo "GitHub Response: ${response}"
 
-                    if (criticalOrHigh.size() > 0) {
-                        error "❌ Found ${criticalOrHigh.size()} HIGH/CRITICAL Dependabot alerts. Failing pipeline!"
-                    } else {
-                        echo "✅ No HIGH/CRITICAL Dependabot alerts found."
-                    }
+                def json = readJSON text: response
+
+                // Handle API errors
+                if (json instanceof Map) {
+                    error "GitHub API Error: ${json.message}"
                 }
+
+                def vulnerableAlerts = json.findAll { alert ->
+                    alert?.state == 'open' &&
+                    ['critical', 'high'].contains(
+                        alert?.security_advisory?.severity?.toLowerCase()
+                    )
+                }
+
+                if (vulnerableAlerts.size() > 0) {
+                    error "Found ${vulnerableAlerts.size()} HIGH/CRITICAL alerts"
+                }
+
+                echo "No HIGH/CRITICAL alerts found"
             }
         }
-
+    }
+}
         // stage ('Docker Build') {
         //     steps {
         //         script {
