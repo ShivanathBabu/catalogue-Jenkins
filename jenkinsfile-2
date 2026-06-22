@@ -59,21 +59,21 @@ pipeline {
             }
         }
 
-        stage('sonar scan') {
-            environment {
-                scannerHome = tool 'sonar-7.2'
-            }
-            steps {
-                 dir('catalogue-v3') {
-                script {
-                    // sonar server environment
-                    withSonarQubeEnv('sonar-7.2') { 
-                        sh "${scannerHome}/bin/sonar-scanner"
-                    }
-                }
-              }
-            }
-        }
+        // stage('sonar scan') {
+        //     environment {
+        //         scannerHome = tool 'sonar-7.2'
+        //     }
+        //     steps {
+        //          dir('catalogue-v3') {
+        //         script {
+        //             // sonar server environment
+        //             withSonarQubeEnv('sonar-7.2') { 
+        //                 sh "${scannerHome}/bin/sonar-scanner"
+        //             }
+        //         }
+        //       }
+        //     }
+        // }
         // Enable webhook sonar qube server and wait for the result
         //  stage('Quality Gate') {
         //     steps {
@@ -84,65 +84,65 @@ pipeline {
         //     }
         // }
 
-        stage('Check Dependabot Alerts') {
-    steps {
-        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
-            script {
+//         stage('Check Dependabot Alerts') {
+//     steps {
+//         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+//             script {
 
-                def response = sh(
-                    script: '''
-                    curl -s -L \
-                      -H "Accept: application/vnd.github+json" \
-                      -H "Authorization: Bearer $GITHUB_TOKEN" \
-                      https://api.github.com/repos/ShivanathBabu/catalogue-Jenkins/dependabot/alerts
-                    ''',
-                    returnStdout: true
-                ).trim()
+//                 def response = sh(
+//                     script: '''
+//                     curl -s -L \
+//                       -H "Accept: application/vnd.github+json" \
+//                       -H "Authorization: Bearer $GITHUB_TOKEN" \
+//                       https://api.github.com/repos/ShivanathBabu/catalogue-Jenkins/dependabot/alerts
+//                     ''',
+//                     returnStdout: true
+//                 ).trim()
 
-                def alerts = readJSON text: response
+//                 def alerts = readJSON text: response
 
-                def vulnerableAlerts = alerts.findAll { alert ->
-                    def severity = alert.security_advisory.severity?.toLowerCase()
-                    def state = alert.state?.toLowerCase()
+//                 def vulnerableAlerts = alerts.findAll { alert ->
+//                     def severity = alert.security_advisory.severity?.toLowerCase()
+//                     def state = alert.state?.toLowerCase()
 
-                    state == 'open' &&
-                    ['critical', 'high'].contains(severity)
+//                     state == 'open' &&
+//                     ['critical', 'high'].contains(severity)
+//                 }
+
+//                 if (vulnerableAlerts.size() > 0) {
+
+//                     echo "===== HIGH/CRITICAL DEPENDABOT ALERTS ====="
+
+//                     vulnerableAlerts.each { alert ->
+//                         echo """
+// Package  : ${alert.dependency.package.name}
+// Severity : ${alert.security_advisory.severity}
+// CVE      : ${alert.security_advisory.cve_id}
+// Summary  : ${alert.security_advisory.summary}
+// """
+//                     }
+
+//                     error("Security Gate Failed. Found ${vulnerableAlerts.size()} HIGH/CRITICAL vulnerabilities.")
+//                 }
+
+//                 echo "No HIGH/CRITICAL vulnerabilities found."
+//             }
+//         }
+//     }
+// }
+        stage ('Docker Build') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws-creds', region: 'us-east-1') {
+                    sh """
+                        aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com
+                        docker build -t ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion} .
+                        docker push ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion}
+                    """
                 }
-
-                if (vulnerableAlerts.size() > 0) {
-
-                    echo "===== HIGH/CRITICAL DEPENDABOT ALERTS ====="
-
-                    vulnerableAlerts.each { alert ->
-                        echo """
-Package  : ${alert.dependency.package.name}
-Severity : ${alert.security_advisory.severity}
-CVE      : ${alert.security_advisory.cve_id}
-Summary  : ${alert.security_advisory.summary}
-"""
-                    }
-
-                    error("Security Gate Failed. Found ${vulnerableAlerts.size()} HIGH/CRITICAL vulnerabilities.")
                 }
-
-                echo "No HIGH/CRITICAL vulnerabilities found."
             }
         }
-    }
-}
-        // stage ('Docker Build') {
-        //     steps {
-        //         script {
-        //             withAWS(credentials: 'aws-creds', region: 'us-east-1') {
-        //             sh """
-        //                 aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com
-        //                 docker build -t ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion} .
-        //                 docker push ${ACC_ID}.dkr.ecr.us-east-1.amazonaws.com/${PROJECT}/${COMPONENT}:${appVersion}
-        //             """
-        //         }
-        //         }
-        //     }
-        // }
 
         //    stage ('Trigger Deploy') {
         //     when {
