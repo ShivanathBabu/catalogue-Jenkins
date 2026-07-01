@@ -1,4 +1,4 @@
-@library('demopipeline.groovy') _ 
+@Library('demopipeline.groovy') _ 
 
 def configMap = [
     greeting : "hello jenkins"
