@@ -1,0 +1,8 @@
+@Library('Jenkins-shared-library') _
+
+def configMap = [
+    project : "roboshop",
+    component : "catalogue"
+]
+
+nodejsVMpipeline(configMap)
