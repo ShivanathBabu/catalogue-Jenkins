@@ -1,0 +1,7 @@
+@library('demopipeline.groovy') _ 
+
+def configMap = [
+    greeting : "hello jenkins"
+]
+
+demopipeline(configMap) //by default it will call the function inside the pipeline
