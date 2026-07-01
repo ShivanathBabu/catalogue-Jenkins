@@ -5,4 +5,10 @@ def configMap = [
     component : "catalogue"
 ]
 
-nodejsVMpipeline(configMap)
+if( ! env.BRANCH_NAME.equalsIgnoreCase('main')) {
+    nodejsVMpipeline(configMap)
+}
+else {
+    echo "Please proceed with PROD Process"
+}
+
